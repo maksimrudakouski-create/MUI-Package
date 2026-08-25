@@ -1,0 +1,58 @@
+# .github/workflows/scope-guard.yml
+name: scope-guard
+on: pull_request
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+
+      # Fails loudly if eslint.presentation.js got dropped or the config was
+      # replaced instead of extended.
+      #
+      # These greps assert on rule PAYLOADS, not rule IDs. The previous kit
+      # checked that "no-restricted-imports" appeared in the printed config —
+      # which stayed true even when a second declaration of the same rule had
+      # overwritten the first and wiped out every ban inside it. A rule ID
+      # proves a rule is configured; only its payload proves it's configured
+      # with the bans you meant.
+      - name: Guard integrity (rules are actually loaded)
+        run: |
+          CFG=$(npx eslint --print-config src/flows/routes.tsx)
+          echo "$CFG" | grep -q '@tanstack/react-query' \
+            || { echo "::error::no-logic-in-presentation bans missing — the import rule was overwritten or the fragment was dropped"; exit 1; }
+          echo "$CFG" | grep -q 'controllers' \
+            || { echo "::error::smart-layer import bans missing from no-restricted-imports"; exit 1; }
+          echo "$CFG" | grep -q 'Use MUI <Button>' \
+            || { echo "::error::MUI-only rule missing — react/forbid-elements is not configured"; exit 1; }
+          echo "$CFG" | grep -q 'No hardcoded colors' \
+            || { echo "::error::theme-values-not-raw rule missing"; exit 1; }
+          echo "$CFG" | grep -q '"react-hooks/rules-of-hooks"' \
+            || { echo "::error::react-hooks missing — the eslint baseline was clobbered"; exit 1; }
+          echo "✓ presentation guardrails are live"
+
+      - name: Types
+        run: npx tsc --noEmit
+
+      - name: Lint presentation folders (MUI-only + theme values + no logic)
+        run: npx eslint "src/{shared/ui,features/*/ui,flows,theme,stories}/**/*.{ts,tsx}" --max-warnings=0
+
+      # The bridge must stay generic: /app reads flows/routes.tsx, it never names
+      # screens. If this fails, someone hardcoded a route and designers will be
+      # forced into /app on their next flow.
+      - name: Router bridge is generic
+        run: |
+          grep -q 'from "../flows/routes"' src/app/router.tsx \
+            || { echo "::error::src/app/router.tsx no longer consumes flows/routes.tsx"; exit 1; }
+          echo "✓ router bridge consumes /flows"
+
+      - name: Scope check (designer stays in presentation)
+        run: node scripts/check-scope.mjs
+        env:
+          GITHUB_BASE_REF: origin/${{ github.base_ref }}
