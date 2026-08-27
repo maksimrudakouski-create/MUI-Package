@@ -34,7 +34,7 @@ export default function CampaignDetailsScreen() {
             <Typography variant="h3" gutterBottom>
               {campaign.name}
             </Typography>
-            <Typography color="text.secondary" variant="body1">
+            <Typography color="text.secondary" sx={styles.description} variant="body1">
               {campaign.description}
             </Typography>
           </Box>

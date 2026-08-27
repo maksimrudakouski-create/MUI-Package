@@ -22,6 +22,7 @@ export const styles = {
   },
   description: {
     mb: 4,
+    fontWeight: "fontWeightLight",
   },
   form: {
     display: "grid",

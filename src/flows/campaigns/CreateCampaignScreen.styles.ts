@@ -12,6 +12,20 @@ export const styles = {
   intro: {
     mb: { xs: 4, md: 6 },
   },
+  titleRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+    mb: 1,
+  },
+  introDescription: {
+    fontWeight: "fontWeightLight",
+  },
+  content: {
+    width: "100%",
+    mx: "auto",
+    maxWidth: { lg: "50%" },
+  },
   stepper: {
     mb: { xs: 4, md: 6 },
   },
@@ -27,6 +41,9 @@ export const styles = {
   },
   sectionHeading: {
     mb: 1,
+  },
+  sectionDescription: {
+    fontWeight: "fontWeightLight",
   },
   assetCard: {
     display: "grid",
@@ -47,13 +64,16 @@ export const styles = {
   },
   actions: {
     display: "flex",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    gap: 1,
     borderTop: 1,
     borderColor: "divider",
     px: { xs: 3, md: 7 },
     py: { xs: 2, md: 4 },
+  },
+  actionGroup: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 1,
+    ml: "auto",
   },
   success: {
     display: "grid",
@@ -72,5 +92,8 @@ export const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: 1.5,
+  },
+  successDescription: {
+    fontWeight: "fontWeightLight",
   },
 } satisfies Record<string, SxProps<Theme>>;

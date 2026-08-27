@@ -12,6 +12,9 @@ export const styles = {
     gap: 2,
     mb: 4,
   },
+  description: {
+    fontWeight: "fontWeightLight",
+  },
   metadata: {
     display: "flex",
     flexWrap: "wrap",

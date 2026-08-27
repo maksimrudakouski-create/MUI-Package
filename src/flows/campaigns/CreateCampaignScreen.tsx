@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link as RouterLink } from "@tanstack/react-router";
+import { Link as RouterLink, useNavigate } from "@tanstack/react-router";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import {
@@ -12,14 +13,21 @@ import {
   Checkbox,
   Chip,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControlLabel,
   Grid,
+  IconButton,
   MenuItem,
   Paper,
   Step,
   StepLabel,
   Stepper,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { AppHeader } from "../../shared/ui/AppHeader";
@@ -41,12 +49,16 @@ const formatOptions = [
 type AssetName = "Brand assets" | "Policy document" | "Hero artwork" | "CTA spreadsheet";
 
 export default function CreateCampaignScreen() {
+  const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
   const [attachedAssets, setAttachedAssets] = useState<AssetName[]>([]);
   const [formats, setFormats] = useState<string[]>(["Social portrait", "Story"]);
   const [isComplete, setIsComplete] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
 
   const toggleFormat = (format: string) => {
+    setIsDirty(true);
     setFormats((current) => (
       current.includes(format)
         ? current.filter((item) => item !== format)
@@ -55,6 +67,7 @@ export default function CreateCampaignScreen() {
   };
 
   const attachAsset = (asset: AssetName) => {
+    setIsDirty(true);
     setAttachedAssets((current) => (
       current.includes(asset) ? current : [...current, asset]
     ));
@@ -86,14 +99,29 @@ export default function CreateCampaignScreen() {
   const nextStep = () => {
     if (activeStep === steps.length - 1) {
       setIsComplete(true);
+      setIsDirty(false);
       return;
     }
     setActiveStep((current) => current + 1);
   };
 
+  const requestExit = () => {
+    if (isDirty) {
+      setIsExitDialogOpen(true);
+      return;
+    }
+
+    navigate({ to: "/campaigns" });
+  };
+
+  const leaveWithoutSaving = () => {
+    setIsExitDialogOpen(false);
+    navigate({ to: "/campaigns" });
+  };
+
   return (
     <>
-      <AppHeader activeSection="campaigns" />
+      <AppHeader activeSection="campaigns" onLogoClick={requestExit} />
       <Box component="main" sx={styles.page}>
       <Container maxWidth={false} sx={styles.container}>
         {isComplete ? (
@@ -105,7 +133,7 @@ export default function CreateCampaignScreen() {
                   Campaign draft created
                 </Typography>
               </Box>
-              <Typography color="text.secondary">
+              <Typography color="text.secondary" sx={styles.successDescription}>
                 Your campaign details, brief, output formats, and mock attachments are ready for review.
               </Typography>
               <Alert severity="info">
@@ -117,12 +145,25 @@ export default function CreateCampaignScreen() {
             </Box>
           </Box>
         ) : (
-          <>
-            <Box sx={styles.intro}>
-              <Typography variant="h2" gutterBottom>
-                Create campaign
-              </Typography>
-              <Typography color="text.secondary" variant="h6">
+            <Box sx={styles.content}>
+              <Box sx={styles.intro}>
+              <Box sx={styles.titleRow}>
+                <Tooltip title="Back to campaigns">
+                  <IconButton
+                    aria-label="Back to campaigns"
+                    component={RouterLink}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      requestExit();
+                    }}
+                    to="/campaigns"
+                  >
+                    <ArrowBackIcon />
+                  </IconButton>
+                </Tooltip>
+                <Typography variant="h2">Create campaign</Typography>
+              </Box>
+              <Typography color="text.secondary" sx={styles.introDescription} variant="h6">
                 Set the campaign foundation, creative brief, output formats, and source assets in one guided flow.
               </Typography>
             </Box>
@@ -136,14 +177,14 @@ export default function CreateCampaignScreen() {
             </Stepper>
 
             <Card elevation={1} sx={styles.card}>
-              <CardContent sx={styles.cardContent}>
+              <CardContent onChange={() => setIsDirty(true)} sx={styles.cardContent}>
                 {activeStep === 0 && (
                   <Box sx={styles.section}>
                     <Box>
                       <Typography sx={styles.sectionHeading} variant="h5">
                         Campaign details
                       </Typography>
-                      <Typography color="text.secondary">
+                      <Typography color="text.secondary" sx={styles.sectionDescription}>
                         Start with the core information that identifies this campaign.
                       </Typography>
                     </Box>
@@ -198,7 +239,7 @@ export default function CreateCampaignScreen() {
                       <Typography sx={styles.sectionHeading} variant="h5">
                         Campaign brief
                       </Typography>
-                      <Typography color="text.secondary">
+                      <Typography color="text.secondary" sx={styles.sectionDescription}>
                         Give Stanleys AI the visual, legal, and creative context needed for this campaign.
                       </Typography>
                     </Box>
@@ -237,7 +278,7 @@ export default function CreateCampaignScreen() {
                       <Typography sx={styles.sectionHeading} variant="h5">
                         Assets &amp; output formats
                       </Typography>
-                      <Typography color="text.secondary">
+                      <Typography color="text.secondary" sx={styles.sectionDescription}>
                         Select the formats to generate, then attach the artwork and CTA source material for this mock flow.
                       </Typography>
                     </Box>
@@ -277,18 +318,36 @@ export default function CreateCampaignScreen() {
 
               </CardContent>
               <CardActions sx={styles.actions}>
-                <Button disabled={activeStep === 0} onClick={() => setActiveStep((current) => current - 1)}>
-                  Back
-                </Button>
-                <Button onClick={nextStep} variant="contained">
-                  {activeStep === steps.length - 1 ? "Create campaign" : "Continue"}
-                </Button>
+                <Box sx={styles.actionGroup}>
+                  {activeStep > 0 && (
+                    <Button onClick={() => setActiveStep((current) => current - 1)}>
+                      Back
+                    </Button>
+                  )}
+                  <Button onClick={nextStep} variant="contained">
+                    {activeStep === steps.length - 1 ? "Create campaign" : "Continue"}
+                  </Button>
+                </Box>
               </CardActions>
             </Card>
-          </>
+          </Box>
         )}
       </Container>
       </Box>
+      <Dialog onClose={() => setIsExitDialogOpen(false)} open={isExitDialogOpen}>
+        <DialogTitle>Leave this campaign?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to leave this screen? All unsaved changes will be lost.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsExitDialogOpen(false)}>Stay</Button>
+          <Button color="error" onClick={leaveWithoutSaving} variant="contained">
+            Leave without saving
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
